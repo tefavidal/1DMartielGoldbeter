@@ -1,15 +1,25 @@
-      subroutine anfang(t,Nx,Ny,gamma,ro,gammanullc,ro1nullc,ro2nullc)
+      subroutine anfang(t,Nx,gamma,ro)
       
-      implicit double precision (a-h, o-z)
+      implicit none
+
+      integer Nx
+      double precision t
+
+      double precision dL1,dL2,dk,dc,dalpha,depsilon,depsilonp,
+     .               dlambda1,dlambda2,s1,s2,vd,tend,tout,dt,tE,
+     .               dx,tol,isf,itstart,pi,amplit,prob,tpulse
+
       common /const/ dL1,dL2,dk,dc,dalpha,depsilon,depsilonp,
      .               dlambda1,dlambda2,s1,s2,vd,tend,tout,dt,tE,
-     .               dx,dy,tol,isf,itstart,pi,amplit,prob,tpulse
+     .               dx,tol,isf,itstart,pi,amplit,prob,tpulse
 
-      double precision gamma(Nx,Ny),ro(Nx,Ny)
-      common /param/ gamma01,ro01,Diffgamma,dke0,dk1
-      double precision gammanullc(300),ro1nullc(300),ro2nullc(300)
+      double precision gamma01,ro01,Diffgamma,dke0,dk1,dsigma0
+      common /param/ gamma01,ro01,Diffgamma,dke0,dk1,dsigma0
 
-
+      double precision gamma(Nx),ro(Nx)
+      double precision dh,tEprime,dk2,dki,dkt,dq,depsilono,dlambda, dKR
+      double precision dtheta,Vmax,tendprime,toutprime,dtprime
+      double precision tpulseprime
 
       open(8,file = 'startdata',status = 'unknown', form = 'formatted')
 
@@ -34,12 +44,15 @@
       s2=dkt/(dke0*dh)
       depsilon=dk1/dke0
       depsilonp=dk1/(dki+dkt)
+
+
       vd=Vmax/(dke0*Diffgamma)**0.5
       dt=dtprime*dk1
-      tE=tEprime*dk1
       tend=tendprime*dk1
+!      tE=tEprime*dk1
+      tE=0.0
       tout=toutprime*dk1
-      tpulse=tpulseprime*dk1
+      tpulse=tpulseprime
 
 
       write(6,*) 'dk=',dk
@@ -51,31 +64,25 @@
       write(6,*) 'depsilon=',depsilon
       write(6,*) 'depsilonp=',depsilonp
       write(6,*) 'vd=',vd,'dt=',dt,'tend=',tend,'tE=',tE
-      ! good for paper 1 dimensional
-!      write(6,*) 'dimensionless xlength=',150*dk1/(dke0*Diffgamma)**0.5
-!      write(6,*) 'dimensionless ylength=',4*dk1/(dke0*Diffgamma)**0.5
-!      dx=150.d0/Nx*dk1/(dke0*Diffgamma)**0.5
-!      dy=dx
-      ! good for paper 2 dimensional
+
       write(6,*) 'dimensionless xlength=',75*dk1/(dke0*Diffgamma)**0.5
-      write(6,*) 'dimensionless ylength=',2*dk1/(dke0*Diffgamma)**0.5
-      dx=75.d0/Nx*dk1/(dke0*Diffgamma)**0.5
-      dy=2.d0/Ny*dk1/(dke0*Diffgamma)**0.5
-      write(6,*) 'Qqqqqqqqqq',(dke0*Diffgamma)**0.5/dk1
-!      write(6,*) 'dimensionless xlength=',75*dk1/(dke0*Diffgamma)**0.5
-!      write(6,*) 'dimensionless ylength=',2*dk1/(dke0*Diffgamma)**0.5
+      dx=0.025*dk1/(dke0*Diffgamma)**0.5
+!      dx=1.d0/Nx*dk1/(dke0*Diffgamma)**0.5
 !      dx=75.d0/Nx*dk1/(dke0*Diffgamma)**0.5
-!      dy=dx
-      write(6,*) 'dx=',dx,'dy=',dy
+      write(6,*) 'Qqqqqqqqqq',(dke0*Diffgamma)**0.5/dk1
+
+
+      write(6,*) 'dx=',dx
 
       open(7,file = 'OutputData2D/Initial-State', err = 20,
      .       status = 'old', form = 'formatted')
 
-      call loadState(t,Nx,Ny,gamma,ro)
-      tE=0
+      call loadState(t,Nx,gamma,ro)
+      tE=t
+      tend=tend+t
       go to 10
 
- 20   call ic(t,Nx,Ny,gamma,ro,gammanullc,ro1nullc,ro2nullc)
+ 20   call ic(t,Nx,gamma,ro)
 
  10   return
       

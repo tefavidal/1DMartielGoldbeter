@@ -1,107 +1,101 @@
-      subroutine ODE(t,Nx,Ny,gamma,ro)
+      subroutine ODE(t,Nx,gamma,ro,vdx)
       
-      implicit double precision (a-h, o-z)
-
-      double precision gamma(Nx,Ny),ro(Nx,Ny)
-      double precision gamma0(Nx,Ny),ro0(Nx,Ny)
-      double precision gammak1(Nx,Ny),rok1(Nx,Ny)
-      double precision gammak2(Nx,Ny),rok2(Nx,Ny)
-      double precision gammak3(Nx,Ny),rok3(Nx,Ny)
-      double precision gammak4(Nx,Ny),rok4(Nx,Ny)
-      double precision gammak5(Nx,Ny),rok5(Nx,Ny)
-      double precision g1(Nx,Ny),r1(Nx,Ny)
-
+      implicit none
+      double precision t
+      integer Nx, i
+      
+      double precision gamma(Nx),ro(Nx)
+      double precision gamma0(Nx),ro0(Nx)
+      double precision gammak1(Nx),rok1(Nx)
+      double precision gammak2(Nx),rok2(Nx)
+      double precision gammak3(Nx),rok3(Nx)
+      double precision gammak4(Nx),rok4(Nx)
+      double precision gammak5(Nx),rok5(Nx)
+      double precision vdx(Nx)
+      double precision g1(Nx),r1(Nx)
+      
+      double precision dL1,dL2,dk,dc,dalpha,depsilon,depsilonp,
+     .               dlambda1,dlambda2,s1,s2,vd,tend,tout,dt,tE,
+     .               dx,tol,isf,itstart,pi,amplit,prob,tpulse
 
       common /const/ dL1,dL2,dk,dc,dalpha,depsilon,depsilonp,
      .               dlambda1,dlambda2,s1,s2,vd,tend,tout,dt,tE,
-     .               dx,dy,tol,isf,itstart,pi,amplit,prob,tpulse
+     .               dx,tol,isf,itstart,pi,amplit,prob,tpulse
 
-      common /param/ gamma01,ro01
+      double precision gamma01,ro01,Diffgamma,dke0,dk1,dsigma0
 
+      common /param/ gamma01,ro01,Diffgamma,dke0,dk1,dsigma0
+
+      double precision tau,h,err
+      integer iteration, index
 
       tau=0.d0
       h=dt
+
  13   do i=1,Nx
-       do j=1,Ny
-        gamma0(i,j)=gamma(i,j)
-        ro0(i,j)=ro(i,j)
-       enddo
+        gamma0(i)=gamma(i)
+        ro0(i)=ro(i)
       enddo
       iteration=0
 
-      call rs(t,Nx,Ny,gamma0,ro0,gammak1,rok1)
+      call rs(t,Nx,gamma0,ro0,gammak1,rok1,vdx)
 !     Runge-Kutta-Merson Method
 
  16   do i=1,Nx
-       do j=1,Ny
-
-        gamma(i,j)=gamma0(i,j)+h*gammak1(i,j)/3
-        ro(i,j)=ro0(i,j)+h*rok1(i,j)/3
-       enddo
+        gamma(i)=gamma0(i)+h*gammak1(i)/3
+        ro(i)=ro0(i)+h*rok1(i)/3
       enddo
 
-      call rs(t+h/3,Nx,Ny,gamma,ro,gammak2,rok2)
+      call rs(t+h/3,Nx,gamma,ro,gammak2,rok2,vdx)
+
       do i=1,Nx
-       do j=1,Ny
-
-        gamma(i,j)=gamma0(i,j)+h*(gammak1(i,j)+gammak2(i,j))/6
-        ro(i,j)=ro0(i,j)+h*(rok1(i,j)+rok2(i,j))/6
-       enddo
+        gamma(i)=gamma0(i)+h*(gammak1(i)+gammak2(i))/6
+        ro(i)=ro0(i)+h*(rok1(i)+rok2(i))/6
       enddo
-      call rs(t+h/3,Nx,Ny,gamma,ro,gammak3,rok3)
+
+      call rs(t+h/3,Nx,gamma,ro,gammak3,rok3,vdx)
+
       do i=1,Nx
-       do j=1,Ny
-
-        gamma(i,j)=gamma0(i,j)+h*(gammak1(i,j)+3*gammak3(i,j))/8
-        ro(i,j)=ro0(i,j)+h*(rok1(i,j)+3*rok3(i,j))/8
-       enddo
+        gamma(i)=gamma0(i)+h*(gammak1(i)+3*gammak3(i))/8
+        ro(i)=ro0(i)+h*(rok1(i)+3*rok3(i))/8
       enddo
-      call rs(t+h/2,Nx,Ny,gamma,ro,gammak4,rok4)
+
+      call rs(t+h/2,Nx,gamma,ro,gammak4,rok4,vdx)
        do i=1,Nx
-       do j=1,Ny
-
-        gamma(i,j)=gamma0(i,j)+h*(gammak1(i,j)-3*gammak3(i,j)
-     .   +4*gammak4(i,j))/2
-        ro(i,j)=ro0(i,j)+h*(rok1(i,j)-3*rok3(i,j)
-     .   +4*rok4(i,j))/2
-       enddo
+        gamma(i)=gamma0(i)+h*(gammak1(i)-3*gammak3(i)
+     .   +4*gammak4(i))/2
+        ro(i)=ro0(i)+h*(rok1(i)-3*rok3(i)
+     .   +4*rok4(i))/2
       enddo
-      call rs(t+h,Nx,Ny,gamma,ro,gammak5,rok5)
+
+      call rs(t+h,Nx,gamma,ro,gammak5,rok5,vdx)
 
       do i=1,Nx
-       do j=1,Ny
-
-        gamma(i,j)=gamma0(i,j)+h*(gammak1(i,j)+4*gammak4(i,j)
-     .   +gammak5(i,j))/6
-        ro(i,j)=ro0(i,j)+h*(rok1(i,j)+4*rok4(i,j)
-     .   +rok5(i,j))/6
-       enddo
+        gamma(i)=gamma0(i)+h*(gammak1(i)+4*gammak4(i)
+     .   +gammak5(i))/6
+        ro(i)=ro0(i)+h*(rok1(i)+4*rok4(i)
+     .   +rok5(i))/6
       enddo
 
       do i=1,Nx
-       do j=1,Ny
-
-!        g1(i,j)=gamma(i,j)-h*(gammak1(i,j)+gammak2(i,j)+gammak3(i,j)
-!     .   +gammak4(i,j)+gammak5(i,j))/5-gamma0(i,j)
-!        r1(i,j)=ro(i,j)-h*(rok1(i,j)+rok2(i,j)+rok2(i,j)+rok3(i,j)
-!     .   +rok4(i,j)+rok5(i,j))/5-ro0(i,j)
-         g1(i,j)=h*(2*gammak1(i,j)-9*gammak3(i,j)
-     .   +8*gammak4(i,j)-gammak5(i,j))/30
-         r1(i,j)=h*(2*rok1(i,j)-9*rok3(i,j)
-     .   +8*rok4(i,j)-rok5(i,j))/30
-       enddo
+!        g1(i)=gamma(i)-h*(gammak1(i)+gammak2(i)+gammak3(i)
+!     .   +gammak4(i)+gammak5(i))/5-gamma0(i)
+!        r1(i)=ro(i)-h*(rok1(i)+rok2(i)+rok2(i)+rok3(i)
+!     .   +rok4(i)+rok5(i))/5-ro0(i)
+         g1(i)=h*(2*gammak1(i)-9*gammak3(i)
+     .   +8*gammak4(i)-gammak5(i))/30
+         r1(i)=h*(2*rok1(i)-9*rok3(i)
+     .   +8*rok4(i)-rok5(i))/30
       enddo
 
       err=0.d0
       index=0
       do i=1,Nx
-       do j=1,Ny
-        err=max(abs(g1(i,j)),abs(r1(i,j)))
-        if (gamma(i,j) .lt. 0.d0 .or. ro(i,j) .lt. 0.d0)then
+        err=max(abs(g1(i)),abs(r1(i)))
+        if (gamma(i) .lt. 0.d0 .or. ro(i) .lt. 0.d0)then
             index=1
             exit
         endif
-       enddo
       enddo
 
       if (err .gt. tol .or. index .eq. 1) then
@@ -122,18 +116,6 @@
       tau=tau+h
 
       h=dt
-!%%%%%%%%%%%%%%%%RANDOM CELL FIRING
-!      do i=1,Nx
-!       do j=1,Ny
-!        ran=rand()
-!        if(ran .lt. 0.0001) then
-!         gamma(i,j)=gamma(i,j)+0.1
-!        else
-!         gamma(i,j)=gamma(i,j)
-!        endif
-!       enddo
-!      enddo
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
       if (tau + h .le. tout+tol*dt) then
 

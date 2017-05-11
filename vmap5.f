@@ -1,14 +1,23 @@
       subroutine vmap5(ier,Nx,Nt,gammax)
 
-      implicit double precision (a-h, o-z)
+      implicit none
+      integer Nx, Nt, i, j
+      double precision dL1,dL2,dk,dc,dalpha,depsilon,depsilonp,
+     .               dlambda1,dlambda2,s1,s2,vd,tend,tout,dt,tE,
+     .               dx,tol,isf,itstart,pi,amplit,prob,tpulse
+
       common /const/ dL1,dL2,dk,dc,dalpha,depsilon,depsilonp,
      .               dlambda1,dlambda2,s1,s2,vd,tend,tout,dt,tE,
-     .               dx,dy,tol,isf,itstart,pi,amplit,prob
+     .               dx,tol,isf,itstart,pi,amplit,prob,tpulse
+
+      double precision gamma01,ro01,Diffgamma,dke0,dk1,dsigma0
+
+      common /param/ gamma01,ro01,Diffgamma,dke0,dk1,dsigma0
 
       double precision gammax(1000,Nx)
+      double precision dx1, dt1
       real gammax1(Nx,1000)
       real tr(6),gammaxmin,gammaxmax,ratio
-      common /param/ gamma01,ro01,Diffgamma,dke0,dk1
       integer ier,pgbeg
       character(len=30) ct
 
@@ -75,4 +84,18 @@ c        annotate an image plot with wedge PGWEDG(SIDE, DISP, WIDTH, FG, BG, LAB
 
       end
 
+      subroutine pallette(contra,bright)
+
+      real contra,bright
+      real l(7),r(7),g(7),b(7)
+
+      data l / 0.,0.1667,0.3333,0.5,0.6667,0.8333,1. /
+      data b / 1.,1.,1.,0.5,0.,0.,0. /
+      data r / 0.,0.,0.,0.5,1.,1.,1. /
+      data g / 0.,0.5,1.,1.,1.,0.5,0. /
+
+      call pgctab(l,r,g,b,7,contra,bright)
+c     install color table to be used by PGCTAB(L, R, G, B, NC, CONTRA, BRIGHT)
+
+      end
 
